@@ -6,26 +6,53 @@ import re
 from typing import Tuple
 from collections import namedtuple
 
-kPatterns = {r"TRADER JOE'S": None}
+kDescPatterns = {r"TRADER JOE S": [1, 'grocery', 0.5],
+                 r"WHOLEFDS": [1, 'grocery', 0.5],
+                 r"Spectrum": [1, 'monthly', None],
+                 r"ASSOCIATED MARKET": [1, 'grocery', 0.5],
+                 r"SEBCO": [1, 'grocery', 0.5],
+                 r"SEAMLSS": [0, 'grocery', 0.5],
+                 r"UBER\s*TRIP": [0, 'uber', 0],
+                 r"CVS/PHARMACY": [1.0, 'drugstore', None],
+                 r"U-HAUL MOVING": [1.0, 'monthly', None],
+                 r"FOODTOWN": [1.0, 'grocery', 0.5],
+}
 kInputFields = ["date", "desc", "type", "amount"]
 kOutputFields = ["date", "desc", "amount", "joint", "category", "percent"]
 
 InputRecord = namedtuple("InputRecord", kInputFields)
 OutputRecord = namedtuple("OutputRecord", kOutputFields)
 
-def match_desc_pattern(input: InputRecord) -> Tuple[float, str, float]:
-    for regex in kPatterns.keys():
+def calc_joint(input: InputRecord, assign: list, regex: str) -> float:
+    if len(assign) < 1:
+        raise Exception("Malformed assignment for field 'joint' for pattern '{regex}'")
+    elif isinstance(assign[0], int) or isinstance(assign[0], float):
+        return assign[0] * input.amount
+    return None
+
+def calc_percent(assign: list, regex: str) -> float:
+    if len(assign) < 3:
+        raise Exception("Malformed assignment for field 'percent' for pattern '{regex}'")
+    elif isinstance(assign[2], int) or isinstance(assign[2], float):
+        return float(assign[2])
+    return None
+
+def match_desc_pattern(input: InputRecord) -> dict:
+    for regex, assign in kDescPatterns.items():
         match = re.search(regex, input.desc)
         if match:
-            print(f"{input.desc} matched {regex}")
-            return True, {"joint": input, "category": "eric", "percent": 1}
+            return True, {"joint": calc_joint(input, assign, regex),
+                          "category": assign[1],
+                          "percent": calc_percent(assign, regex)
+            }
     return False, None
 
 def build_output_record(input: InputRecord) -> OutputRecord:
     output = {"date" : input.date, "desc" : input.desc, "amount": input.amount}
     did_match, match_dict = match_desc_pattern(input)
     if did_match:
-        output.extend(match_dict)
+        output.update(match_dict)
+        print(output)
     else:
         output["joint"] = None
         output["category"] = None
@@ -46,16 +73,15 @@ def parse_input_record(row: dict) -> InputRecord:
 if __name__ == '__main__':
     
     infile_name = "/Users/ecolton/Downloads/Chase7103_Activity20240411_20240510_20240525.CSV"
-    outfile_name = infile_name
-    outfile_name.rstrip('.CSV')
+    outfile_name = infile_name.rstrip('.CSV')
     outfile_name += "_OUT.CSV"
 
     with open(infile_name, 'r') as infile:
         with open(outfile_name, 'w', newline='') as outfile:
             csv_reader = csv.DictReader(infile)
-            csv_writer = csv.DictWriter(outfile, fieldnames=["date", "desc", "amount", ""])
+            csv_writer = csv.DictWriter(outfile, fieldnames=kOutputFields)
         
             for row in csv_reader:
                 output_entry = process_record(parse_input_record(row))
                 if output_entry:
-                    csv_writer.writerow(output_entry)
+                    csv_writer.writerow(output_entry._asdict())
