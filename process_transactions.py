@@ -10,12 +10,15 @@ from collections import namedtuple
 kDescPatterns = {r"TRADER JOE S": [0, 'grocery', 0.5],
                  r"WHOLEFDS": [0, 'grocery', 0.5],
                  r"Spectrum": [1, 'monthly', None],
+                 r"JIOBIT.COM": [1, 'monthly', None],
                  r"ASSOCIATED MARKET": [0, 'grocery', 0.5],
                  r"SEBCO": [0, 'grocery', 0.5],
                  r"SEAMLSS": [0, 'grocery', 0.5],
                  r"CVS/PHARMACY": [1.0, 'drugstore', None],
+                 r"WALGREENS": [1.0, 'drugstore', None],
                  r"U-HAUL MOVING": [1.0, 'monthly', None],
                  r"FOODTOWN": [0, 'grocery', 0.5],
+                 r"STEVE\'S C\-TOWN": [0, 'grocery', 0.5],                 
 }
 kInputFields = ["date", "desc", "type", "amount_precise", "amount"]
 kOutputFields = ["date", "desc", "amount_precise", "amount", "joint", "category", "percent"]
@@ -27,7 +30,7 @@ def calc_joint(input: InputRecord, assign: list, regex: str) -> float:
     if len(assign) < 1:
         raise Exception(f"Malformed assignment for field 'joint' for pattern '{regex}'")
     elif (isinstance(assign[0], int) or isinstance(assign[0], float)) and assign[0] > 0:
-        return assign[0] * input.amount
+        return round(assign[0] * input.amount)
     return None
 
 def calc_percent(assign: list, regex: str) -> float:
@@ -50,8 +53,8 @@ def match_desc_pattern(input: InputRecord) -> dict:
 def build_output_record(input: InputRecord) -> OutputRecord:
     output = {"date" : input.date,
               "desc" : input.desc,
-              "amount": round(input.amount),
-              "amount_precise": input.amount,
+              "amount": input.amount,
+              "amount_precise": input.amount_precise,
               }
     did_match, match_dict = match_desc_pattern(input)
     if did_match:
@@ -65,14 +68,14 @@ def build_output_record(input: InputRecord) -> OutputRecord:
 def process_record(input: InputRecord) -> OutputRecord:
     if input.type == "Payment":
         return None
-    elif input.type == "Sale" or input.type == "Return":
+    elif input.type == "Sale" or input.type == "Return" or input.type == "Fee":
         return build_output_record(input)
     else:
         raise Exception(f"unexpected input record type: '{input.type}'")
 
 def parse_input_record(row: dict) -> InputRecord:
     amount = -float(row["Amount"])
-    return InputRecord(row["Transaction Date"], row["Description"], row["Type"], round(amount), amount)
+    return InputRecord(row["Transaction Date"], row["Description"], row["Type"], amount, round(amount))
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
