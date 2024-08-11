@@ -9,6 +9,7 @@ from collections import namedtuple
 
 kDescPatterns = {r"TRADER JOE S": [0, 'grocery', 0.5],
                  r"WHOLEFDS": [0, 'grocery', 0.5],
+                 r"Whole Foods BKN": [0, 'grocery', 0.5],
                  r"Spectrum": [1, 'monthly', None],
                  r"JIOBIT.COM": [1, 'monthly', None],
                  r"ASSOCIATED MARKET": [0, 'grocery', 0.5],
@@ -18,7 +19,9 @@ kDescPatterns = {r"TRADER JOE S": [0, 'grocery', 0.5],
                  r"WALGREENS": [1.0, 'drugstore', None],
                  r"U-HAUL MOVING": [1.0, 'monthly', None],
                  r"FOODTOWN": [0, 'grocery', 0.5],
-                 r"STEVE\'S C\-TOWN": [0, 'grocery', 0.5],                 
+                 r"STEVE\'S C\-TOWN": [0, 'grocery', 0.5],
+                 r"PRIMARK CITY POINT FULTON": [1.0, 'kids', None],
+                 r"NYCDOT PARKING METERS": [0, 'grocery', 0.5],
 }
 kInputFields = ["date", "desc", "type", "amount_precise", "amount"]
 kOutputFields = ["date", "desc", "amount_precise", "amount", "joint", "category", "percent"]
